@@ -1,42 +1,129 @@
-<div class="h-screen bg-[#121212] text-white flex flex-col p-6">
-  <!-- Header -->
-  <header class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold text-[#d4af37]">LuxuryVision</h1>
-      <div class="flex space-x-8 text-sm">
-          <span>1. Carica</span><span>2. Analisi IA</span><span>3. Modifica</span><span>4. Esporta</span>
-      </div>
-  </header>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>LuxuryVision Online</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
 
-  <!-- Main Grid Layout -->
-  <div class="grid grid-cols-12 gap-6 flex-grow">
-      <!-- Area Centrale (Main Workspace) -->
-      <main class="col-span-8 bg-[#1e1e1e] rounded-2xl border border-gray-700 p-8 flex flex-col items-center justify-center">
-          <div class="text-center mb-8">
-              <h2 class="text-3xl font-bold mb-4">CARICA IMMAGINE</h2>
-              <div id="dropZone" class="border-2 border-dashed border-[#d4af37] p-16 rounded-xl cursor-pointer">
-                  <!-- Icona + testo -->
-                  <p>Trascina & Rilascia, Incolla, o Sfoglia</p>
-              </div>
-          </div>
-          <div class="space-y-4 w-full max-w-lg">
-              <button class="w-full py-3 bg-[#d4af37] text-black font-bold rounded">INIZIA ANALISI IA (GEMINI)</button>
-              <button class="w-full py-3 border border-[#d4af37] text-[#d4af37] font-bold rounded">RIORDINA & PULISCI (CLEANSCAPING)</button>
-          </div>
-      </main>
+<body>
 
-      <!-- Sidebar Destra (Controlli & Preset) -->
-      <aside class="col-span-4 space-y-6">
-          <!-- Pannello Controlli -->
-          <div class="bg-[#1e1e1e] p-6 rounded-2xl border border-gray-700">
-              <h3 class="text-sm font-bold text-[#d4af37] mb-4">AREA DI LAVORO CONTROLLI</h3>
-              <!-- Qui inseriremo l'anteprima e i tasti icona -->
-          </div>
-          
-          <!-- Pannello Preset -->
-          <div class="bg-[#1e1e1e] p-6 rounded-2xl border border-gray-700">
-              <h3 class="text-sm font-bold text-[#d4af37] mb-4">AREA DI LAVORO PRESET</h3>
-              <!-- Area griglia 3 box -->
-          </div>
-      </aside>
-  </div>
-</div>
+<header>
+    <h1>LuxuryVision Online</h1>
+</header>
+
+<main>
+
+    <div class="upload-box">
+
+        <!-- ANTEPRIMA -->
+        <div id="preview-container"></div>
+
+        <!-- FORM SOLO PER L'IMMAGINE (per ora niente Flow) -->
+        <form id="imageForm" enctype="multipart/form-data" onsubmit="return false;">
+
+            <!-- UPLOAD / INCOLLA -->
+            <label class="upload-area">
+                <input type="file" name="image" accept="image/*" id="imageInput" required>
+                <span>Clicca o incolla un'immagine</span>
+            </label>
+
+        </form>
+    </div>
+
+    <!-- BLOCCO ANALISI / PROMPT -->
+    <div class="result-box" id="analysis-box" style="display:none;">
+        <h2>Prompt generato (LuxuryVision)</h2>
+        <textarea id="generated_prompt" class="textarea-gold" rows="8"></textarea>
+        <button type="button" class="action-btn" id="copyPromptBtn">Copia prompt</button>
+    </div>
+
+</main>
+
+<!-- SCRIPT: ANTEPRIMA + ANALISI AUTOMATICA + COPIA PROMPT -->
+<script>
+// --- ANTEPRIMA IMMAGINE ---
+function showPreview(blob) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        let preview = document.getElementById("preview");
+        if (!preview) {
+            preview = document.createElement("img");
+            preview.id = "preview";
+            preview.style.maxWidth = "100%";
+            preview.style.border = "2px solid #c9a44f";
+            preview.style.borderRadius = "10px";
+            preview.style.marginBottom = "20px";
+            document.getElementById("preview-container").appendChild(preview);
+        }
+        preview.src = e.target.result;
+    };
+    reader.readAsDataURL(blob);
+}
+
+// --- CHIAMATA API ANALISI ---
+async function analyzeImage(file) {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const res = await fetch("/api/analyze", {
+        method: "POST",
+        body: formData
+    });
+
+    const data = await res.json();
+
+    if (data.prompt) {
+        const box = document.getElementById("analysis-box");
+        const ta = document.getElementById("generated_prompt");
+        ta.value = data.prompt;
+        box.style.display = "block";
+    } else if (data.error) {
+        alert("Errore analisi: " + data.error);
+    }
+}
+
+// --- DOPO UPLOAD FILE ---
+const imageInput = document.getElementById("imageInput");
+imageInput.addEventListener("change", () => {
+    const file = imageInput.files[0];
+    if (!file) return;
+    showPreview(file);
+    analyzeImage(file);
+});
+
+// --- INCOLLA DAGLI APPUNTI ---
+document.addEventListener("paste", (event) => {
+    const items = event.clipboardData.items;
+    for (let item of items) {
+        if (item.type.startsWith("image/")) {
+            const blob = item.getAsFile();
+            const file = new File([blob], "clipboard.png", { type: blob.type });
+
+            // metti nel file input (così resta coerente)
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            imageInput.files = dt.files;
+
+            showPreview(blob);
+            analyzeImage(file);
+
+            alert("📸 Immagine incollata e inviata in analisi!");
+        }
+    }
+});
+
+// --- COPIA PROMPT ---
+document.getElementById("copyPromptBtn").addEventListener("click", async () => {
+    const text = document.getElementById("generated_prompt").value;
+    if (!text) {
+        alert("Nessun prompt da copiare.");
+        return;
+    }
+    await navigator.clipboard.writeText(text);
+    alert("Prompt copiato negli appunti!");
+});
+</script>
+
+</body>
+</html>
