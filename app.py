@@ -25,7 +25,7 @@ def api_analyze():
     # Leggiamo i dati e li trasformiamo in un formato compatibile
     img_bytes = file.read()
     
-    model = genai.GenerativeModel("gemini-1.5-flash") # Usiamo 1.5-flash per massima compatibilità
+   model = genai.GenerativeModel("gemini-1.5-flash")
     
     prompt = """
     Sei LuxuryVision AI, un assistente esperto in real estate. 
