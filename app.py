@@ -1,50 +1,77 @@
-import os
-import google.generativeai as genai
-from flask import Flask, render_template, request, jsonify
-
-app = Flask(__name__)
-
-# Configurazione chiave API
-api_key = os.environ.get("GOOGLE_API_KEY")
-genai.configure(api_key=api_key)
-
-def get_available_model():
-    """Cerca automaticamente un modello valido tra quelli disponibili."""
-    for m in genai.list_models():
-        if 'generateContent' in m.supported_generation_methods:
-            # Preferiamo i modelli Flash per velocità e compatibilità
-            if 'flash' in m.name:
-                return m.name
-    return "gemini-1.5-flash" # Fallback di sicurezza
-
-@app.route("/")
-def home():
-    return render_template("index.html")
-
-@app.route("/api/analyze", methods=["POST"])
-def api_analyze():
-    if "image" not in request.files:
-        return jsonify({"error": "Nessuna immagine caricata"}), 400
-
-    file = request.files["image"]
-    img_bytes = file.read()
-    
-    try:
-        # Selezioniamo il modello dinamicamente
-        model_name = get_available_model()
-        model = genai.GenerativeModel(model_name)
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>LuxuryVision | Pro Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #0a0a0a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.03); border: 1px solid #333; backdrop-filter: blur(10px); }
+        .gold-accent { border-color: #d4af37; }
+        .text-gold { color: #d4af37; }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-light tracking-widest text-gold mb-8">LUXURYVISION</h1>
         
-        prompt = "Sei LuxuryVision AI, un esperto real estate. Analizza la foto e genera solo un prompt professionale per valorizzarla."
+        <div class="grid grid-cols-3 gap-6">
+            <!-- Colonna Sinistra -->
+            <div class="col-span-2 space-y-6">
+                <!-- Area Drop/Paste -->
+                <div id="dropZone" class="glass h-64 flex flex-col items-center justify-center border-2 border-dashed border-gray-700 hover:border-gold-accent transition cursor-pointer rounded-xl">
+                    <img id="preview" class="max-h-52 hidden rounded" alt="Preview">
+                    <div id="placeholder" class="text-center">
+                        <p class="text-gray-400">Trascina un file o <b>CTRL+V</b> per incollare</p>
+                    </div>
+                </div>
 
-        response = model.generate_content([
-            prompt,
-            {"mime_type": file.mimetype, "data": img_bytes}
-        ])
-        return jsonify({"prompt": response.text})
-        
-    except Exception as e:
-        print(f">>> ERRORE CRITICO: {str(e)}")
-        return jsonify({"error": f"Errore durante l'analisi: {str(e)}"}), 500
+                <textarea id="notes" class="w-full bg-black border border-gray-700 p-4 rounded-xl focus:border-gold-accent outline-none" placeholder="Note per l'AI..."></textarea>
+                <button onclick="analyze()" class="w-full py-4 bg-gold-accent text-black font-bold rounded-xl hover:bg-yellow-600 transition">ANALIZZA PROMPT</button>
+            </div>
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+            <!-- Colonna Destra (Anteprime e Risultati) -->
+            <div class="glass p-6 rounded-xl">
+                <h2 class="text-gold font-bold mb-4">OUTPUT</h2>
+                <div id="output" class="text-sm italic text-gray-400">In attesa...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedFile = null;
+
+        // Gestione Incolla (CTRL+V)
+        window.addEventListener('paste', e => {
+            const item = e.clipboardData.items[0];
+            if (item.type.startsWith('image')) {
+                const file = item.getAsFile();
+                processImage(file);
+            }
+        });
+
+        function processImage(file) {
+            uploadedFile = file;
+            const reader = new FileReader();
+            reader.onload = e => {
+                document.getElementById('preview').src = e.target.result;
+                document.getElementById('preview').classList.remove('hidden');
+                document.getElementById('placeholder').classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function analyze() {
+            if (!uploadedFile) { alert("Carica un'immagine prima!"); return; }
+            const formData = new FormData();
+            formData.append('image', uploadedFile);
+            formData.append('notes', document.getElementById('notes').value);
+            
+            document.getElementById('output').innerText = "Elaborazione in corso...";
+            const res = await fetch('/api/analyze', { method: 'POST', body: formData });
+            const data = await res.json();
+            document.getElementById('output').innerText = data.prompt || data.error;
+        }
+    </script>
+</body>
+</html>
