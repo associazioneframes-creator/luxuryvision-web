@@ -2,128 +2,103 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>LuxuryVision Online</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuxuryVision | Professional AI Workflow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .gold-border { border: 1px solid #d4af37; }
+        .bg-luxury { background-color: #1e1e1e; }
+        .text-gold { color: #d4af37; }
+        .btn-gold { background-color: #d4af37; color: #000; font-weight: bold; }
+        .btn-gold:hover { background-color: #b8962d; }
+    </style>
 </head>
+<body class="min-h-screen p-6">
 
-<body>
+    <!-- Header -->
+    <header class="flex justify-between items-center mb-8 pb-4 border-b border-gray-700">
+        <h1 class="text-3xl font-bold text-gold tracking-tighter">LuxuryVision</h1>
+        <nav class="flex gap-6 text-sm">
+            <span class="text-gold border-b-2 border-gold">1. Carica</span>
+            <span class="text-gray-400">2. Analisi IA</span>
+            <span class="text-gray-400">3. Modifica</span>
+            <span class="text-gray-400">4. Esporta</span>
+        </nav>
+    </header>
 
-<header>
-    <h1>LuxuryVision Online</h1>
-</header>
+    <div class="grid grid-cols-4 gap-6">
+        <!-- Main Area -->
+        <main class="col-span-3 space-y-6">
+            <div id="dropzone" class="bg-luxury p-12 rounded-lg border-2 border-dashed border-gray-600 text-center cursor-pointer hover:border-gold transition">
+                <div class="text-5xl mb-4">☁️</div>
+                <h2 class="text-xl font-semibold">CARICA IMMAGINE</h2>
+                <p class="text-gray-400 mt-2">Trascina & Rilascia, Incolla, o Sfoglia per iniziare</p>
+                <input type="file" id="fileInput" class="hidden">
+            </div>
 
-<main>
+            <div class="bg-luxury p-6 rounded-lg gold-border">
+                <h3 class="text-gold mb-2 font-semibold">NOTE E INPUT NOTE</h3>
+                <textarea id="userNotes" class="w-full bg-black border border-gray-600 rounded p-4 h-32 text-white" placeholder="Incolla qui le note del cliente..."></textarea>
+                <button onclick="analyzeImage()" class="mt-4 px-8 py-3 btn-gold rounded w-full">INIZIA ANALISI IA</button>
+            </div>
 
-    <div class="upload-box">
+            <div class="bg-luxury p-6 rounded-lg gold-border">
+                <h3 class="text-gold mb-4 font-semibold">Prompt Generato (ComfyUI Ready)</h3>
+                <div id="resultOutput" class="bg-black p-4 rounded text-gray-300 min-h-[100px] whitespace-pre-wrap italic">
+                    Il prompt apparirà qui dopo l'analisi...
+                </div>
+            </div>
+        </main>
 
-        <!-- ANTEPRIMA -->
-        <div id="preview-container"></div>
+        <!-- Sidebar -->
+        <aside class="col-span-1 space-y-6">
+            <div class="bg-luxury p-6 rounded-lg gold-border">
+                <h3 class="text-gold font-semibold mb-4">CORREZIONI RAPIDE</h3>
+                <div class="grid grid-cols-3 gap-2">
+                    <button class="p-2 border border-gray-600 text-xs hover:border-gold">HDR</button>
+                    <button class="p-2 border border-gray-600 text-xs hover:border-gold">COLOR</button>
+                    <button class="p-2 border border-gray-600 text-xs hover:border-gold">SKY</button>
+                    <button class="p-2 border border-gray-600 text-xs hover:border-gold">CLEAN</button>
+                    <button class="p-2 border border-gray-600 text-xs hover:border-gold">STRAIGHT</button>
+                </div>
+            </div>
 
-        <!-- FORM SOLO PER L'IMMAGINE (per ora niente Flow) -->
-        <form id="imageForm" enctype="multipart/form-data" onsubmit="return false;">
-
-            <!-- UPLOAD / INCOLLA -->
-            <label class="upload-area">
-                <input type="file" name="image" accept="image/*" id="imageInput" required>
-                <span>Clicca o incolla un'immagine</span>
-            </label>
-
-        </form>
+            <div class="bg-luxury p-6 rounded-lg gold-border">
+                <h3 class="text-gold font-semibold mb-4">PRESET PERSONALI</h3>
+                <div class="h-32 border border-gray-600 border-dashed flex items-center justify-center text-gray-500">
+                    Prossimamente
+                </div>
+            </div>
+        </aside>
     </div>
 
-    <!-- BLOCCO ANALISI / PROMPT -->
-    <div class="result-box" id="analysis-box" style="display:none;">
-        <h2>Prompt generato (LuxuryVision)</h2>
-        <textarea id="generated_prompt" class="textarea-gold" rows="8"></textarea>
-        <button type="button" class="action-btn" id="copyPromptBtn">Copia prompt</button>
-    </div>
+    <script>
+        async function analyzeImage() {
+            const fileInput = document.getElementById('fileInput');
+            const notes = document.getElementById('userNotes').value;
+            const output = document.getElementById('resultOutput');
 
-</main>
+            if (!fileInput.files[0]) { alert("Carica un'immagine prima!"); return; }
 
-<!-- SCRIPT: ANTEPRIMA + ANALISI AUTOMATICA + COPIA PROMPT -->
-<script>
-// --- ANTEPRIMA IMMAGINE ---
-function showPreview(blob) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        let preview = document.getElementById("preview");
-        if (!preview) {
-            preview = document.createElement("img");
-            preview.id = "preview";
-            preview.style.maxWidth = "100%";
-            preview.style.border = "2px solid #c9a44f";
-            preview.style.borderRadius = "10px";
-            preview.style.marginBottom = "20px";
-            document.getElementById("preview-container").appendChild(preview);
+            output.innerText = "Analisi in corso...";
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            formData.append('notes', notes);
+
+            try {
+                const response = await fetch('/api/analyze', { method: 'POST', body: formData });
+                const data = await response.json();
+                output.innerText = data.prompt || data.error;
+            } catch (err) {
+                output.innerText = "Errore di connessione.";
+            }
         }
-        preview.src = e.target.result;
-    };
-    reader.readAsDataURL(blob);
-}
 
-// --- CHIAMATA API ANALISI ---
-async function analyzeImage(file) {
-    const formData = new FormData();
-    formData.append("image", file);
-
-    const res = await fetch("/api/analyze", {
-        method: "POST",
-        body: formData
-    });
-
-    const data = await res.json();
-
-    if (data.prompt) {
-        const box = document.getElementById("analysis-box");
-        const ta = document.getElementById("generated_prompt");
-        ta.value = data.prompt;
-        box.style.display = "block";
-    } else if (data.error) {
-        alert("Errore analisi: " + data.error);
-    }
-}
-
-// --- DOPO UPLOAD FILE ---
-const imageInput = document.getElementById("imageInput");
-imageInput.addEventListener("change", () => {
-    const file = imageInput.files[0];
-    if (!file) return;
-    showPreview(file);
-    analyzeImage(file);
-});
-
-// --- INCOLLA DAGLI APPUNTI ---
-document.addEventListener("paste", (event) => {
-    const items = event.clipboardData.items;
-    for (let item of items) {
-        if (item.type.startsWith("image/")) {
-            const blob = item.getAsFile();
-            const file = new File([blob], "clipboard.png", { type: blob.type });
-
-            // metti nel file input (così resta coerente)
-            const dt = new DataTransfer();
-            dt.items.add(file);
-            imageInput.files = dt.files;
-
-            showPreview(blob);
-            analyzeImage(file);
-
-            alert("📸 Immagine incollata e inviata in analisi!");
-        }
-    }
-});
-
-// --- COPIA PROMPT ---
-document.getElementById("copyPromptBtn").addEventListener("click", async () => {
-    const text = document.getElementById("generated_prompt").value;
-    if (!text) {
-        alert("Nessun prompt da copiare.");
-        return;
-    }
-    await navigator.clipboard.writeText(text);
-    alert("Prompt copiato negli appunti!");
-});
-</script>
-
+        // Drag and drop setup
+        const dropzone = document.getElementById('dropzone');
+        dropzone.onclick = () => document.getElementById('fileInput').click();
+    </script>
 </body>
 </html>
