@@ -1,18 +1,19 @@
-from flask import Flask, request, jsonify
+from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "LuxuryVision Online è attivo."
+    return render_template("index.html")
 
-@app.route("/prompt", methods=["POST"])
-def genera_prompt():
-    # qui in futuro puoi usare la logica reale di LuxuryVision
-    return jsonify({
-        "positivo": "Riordina la stanza, aumenta la luminosità del 50%, mantieni mobili e struttura intatti.",
-        "negativo": "Non aggiungere oggetti nuovi, non cambiare colori o materiali, non modificare la geometria."
-    })
+@app.route("/process", methods=["POST"])
+def process():
+    image = request.files["image"]
+
+    # Per ora solo demo: in futuro qui mettiamo la vera AI
+    result = f"Prompt generato per: {image.filename}"
+
+    return render_template("index.html", result=result)
 
 if __name__ == "__main__":
     app.run()
