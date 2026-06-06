@@ -1,104 +1,42 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LuxuryVision | Professional AI Workflow</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; }
-        .gold-border { border: 1px solid #d4af37; }
-        .bg-luxury { background-color: #1e1e1e; }
-        .text-gold { color: #d4af37; }
-        .btn-gold { background-color: #d4af37; color: #000; font-weight: bold; }
-        .btn-gold:hover { background-color: #b8962d; }
-    </style>
-</head>
-<body class="min-h-screen p-6">
+<div class="h-screen bg-[#121212] text-white flex flex-col p-6">
+  <!-- Header -->
+  <header class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-[#d4af37]">LuxuryVision</h1>
+      <div class="flex space-x-8 text-sm">
+          <span>1. Carica</span><span>2. Analisi IA</span><span>3. Modifica</span><span>4. Esporta</span>
+      </div>
+  </header>
 
-    <!-- Header -->
-    <header class="flex justify-between items-center mb-8 pb-4 border-b border-gray-700">
-        <h1 class="text-3xl font-bold text-gold tracking-tighter">LuxuryVision</h1>
-        <nav class="flex gap-6 text-sm">
-            <span class="text-gold border-b-2 border-gold">1. Carica</span>
-            <span class="text-gray-400">2. Analisi IA</span>
-            <span class="text-gray-400">3. Modifica</span>
-            <span class="text-gray-400">4. Esporta</span>
-        </nav>
-    </header>
+  <!-- Main Grid Layout -->
+  <div class="grid grid-cols-12 gap-6 flex-grow">
+      <!-- Area Centrale (Main Workspace) -->
+      <main class="col-span-8 bg-[#1e1e1e] rounded-2xl border border-gray-700 p-8 flex flex-col items-center justify-center">
+          <div class="text-center mb-8">
+              <h2 class="text-3xl font-bold mb-4">CARICA IMMAGINE</h2>
+              <div id="dropZone" class="border-2 border-dashed border-[#d4af37] p-16 rounded-xl cursor-pointer">
+                  <!-- Icona + testo -->
+                  <p>Trascina & Rilascia, Incolla, o Sfoglia</p>
+              </div>
+          </div>
+          <div class="space-y-4 w-full max-w-lg">
+              <button class="w-full py-3 bg-[#d4af37] text-black font-bold rounded">INIZIA ANALISI IA (GEMINI)</button>
+              <button class="w-full py-3 border border-[#d4af37] text-[#d4af37] font-bold rounded">RIORDINA & PULISCI (CLEANSCAPING)</button>
+          </div>
+      </main>
 
-    <div class="grid grid-cols-4 gap-6">
-        <!-- Main Area -->
-        <main class="col-span-3 space-y-6">
-            <div id="dropzone" class="bg-luxury p-12 rounded-lg border-2 border-dashed border-gray-600 text-center cursor-pointer hover:border-gold transition">
-                <div class="text-5xl mb-4">☁️</div>
-                <h2 class="text-xl font-semibold">CARICA IMMAGINE</h2>
-                <p class="text-gray-400 mt-2">Trascina & Rilascia, Incolla, o Sfoglia per iniziare</p>
-                <input type="file" id="fileInput" class="hidden">
-            </div>
-
-            <div class="bg-luxury p-6 rounded-lg gold-border">
-                <h3 class="text-gold mb-2 font-semibold">NOTE E INPUT NOTE</h3>
-                <textarea id="userNotes" class="w-full bg-black border border-gray-600 rounded p-4 h-32 text-white" placeholder="Incolla qui le note del cliente..."></textarea>
-                <button onclick="analyzeImage()" class="mt-4 px-8 py-3 btn-gold rounded w-full">INIZIA ANALISI IA</button>
-            </div>
-
-            <div class="bg-luxury p-6 rounded-lg gold-border">
-                <h3 class="text-gold mb-4 font-semibold">Prompt Generato (ComfyUI Ready)</h3>
-                <div id="resultOutput" class="bg-black p-4 rounded text-gray-300 min-h-[100px] whitespace-pre-wrap italic">
-                    Il prompt apparirà qui dopo l'analisi...
-                </div>
-            </div>
-        </main>
-
-        <!-- Sidebar -->
-        <aside class="col-span-1 space-y-6">
-            <div class="bg-luxury p-6 rounded-lg gold-border">
-                <h3 class="text-gold font-semibold mb-4">CORREZIONI RAPIDE</h3>
-                <div class="grid grid-cols-3 gap-2">
-                    <button class="p-2 border border-gray-600 text-xs hover:border-gold">HDR</button>
-                    <button class="p-2 border border-gray-600 text-xs hover:border-gold">COLOR</button>
-                    <button class="p-2 border border-gray-600 text-xs hover:border-gold">SKY</button>
-                    <button class="p-2 border border-gray-600 text-xs hover:border-gold">CLEAN</button>
-                    <button class="p-2 border border-gray-600 text-xs hover:border-gold">STRAIGHT</button>
-                </div>
-            </div>
-
-            <div class="bg-luxury p-6 rounded-lg gold-border">
-                <h3 class="text-gold font-semibold mb-4">PRESET PERSONALI</h3>
-                <div class="h-32 border border-gray-600 border-dashed flex items-center justify-center text-gray-500">
-                    Prossimamente
-                </div>
-            </div>
-        </aside>
-    </div>
-
-    <script>
-        async function analyzeImage() {
-            const fileInput = document.getElementById('fileInput');
-            const notes = document.getElementById('userNotes').value;
-            const output = document.getElementById('resultOutput');
-
-            if (!fileInput.files[0]) { alert("Carica un'immagine prima!"); return; }
-
-            output.innerText = "Analisi in corso...";
-
-            const formData = new FormData();
-            formData.append('image', fileInput.files[0]);
-            formData.append('notes', notes);
-
-            try {
-                const response = await fetch('/api/analyze', { method: 'POST', body: formData });
-                const data = await response.json();
-                output.innerText = data.prompt || data.error;
-            } catch (err) {
-                output.innerText = "Errore di connessione.";
-            }
-        }
-
-        // Drag and drop setup
-        const dropzone = document.getElementById('dropzone');
-        dropzone.onclick = () => document.getElementById('fileInput').click();
-    </script>
-</body>
-</html>
+      <!-- Sidebar Destra (Controlli & Preset) -->
+      <aside class="col-span-4 space-y-6">
+          <!-- Pannello Controlli -->
+          <div class="bg-[#1e1e1e] p-6 rounded-2xl border border-gray-700">
+              <h3 class="text-sm font-bold text-[#d4af37] mb-4">AREA DI LAVORO CONTROLLI</h3>
+              <!-- Qui inseriremo l'anteprima e i tasti icona -->
+          </div>
+          
+          <!-- Pannello Preset -->
+          <div class="bg-[#1e1e1e] p-6 rounded-2xl border border-gray-700">
+              <h3 class="text-sm font-bold text-[#d4af37] mb-4">AREA DI LAVORO PRESET</h3>
+              <!-- Area griglia 3 box -->
+          </div>
+      </aside>
+  </div>
+</div>
